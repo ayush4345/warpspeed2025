@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -9,8 +9,11 @@ import {
   Modal,
   Animated,
   Dimensions,
-  PanResponder
+  PanResponder,
+  Button
 } from 'react-native';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
@@ -246,6 +249,8 @@ const Index: React.FC<IndexProps> = () => {
   const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState<Notifications.Notification | false>(false);
 
   // Sample data for cards
   const cards = [
@@ -323,6 +328,28 @@ const Index: React.FC<IndexProps> = () => {
   const navigateToSettings = () => {
     router.push('/settings');
   };
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token: string | undefined) => {
+      if(token) {
+        setExpoPushToken(token);
+        registerDeviceWithServer(token);
+      }
+    });
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
 
   return (
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
