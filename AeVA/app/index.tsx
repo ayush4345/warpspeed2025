@@ -13,7 +13,7 @@ import {
   Button
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, sendPushNotification, registerDeviceWithServer } from "./lib/notifications";
+import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
 
 interface IndexProps {}
 
@@ -286,23 +286,6 @@ const Index: React.FC<IndexProps> = () => {
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
         <Text style={styles.headerText}>Leagues</Text>
-        <View style={{ padding: 20 }}>
-          <Text>Your Expo Push Token:</Text>
-          <Text selectable>{expoPushToken}</Text>
-          {notification && (
-            <View>
-              <Text>Title: {notification.request.content.title}</Text>
-              <Text>Body: {notification.request.content.body}</Text>
-              <Text>Data: {JSON.stringify(notification.request.content.data)}</Text>
-            </View>
-          )}
-          <Button
-            title="Send Test Notification"
-            onPress={async () => {
-              await sendPushNotification(expoPushToken);
-            }}
-          />
-        </View>
         {cards.map((card, index) => (
           <Card
             key={index}
