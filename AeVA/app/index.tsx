@@ -3,7 +3,8 @@ import {
   Text, 
   View, 
   ScrollView, 
-  TouchableOpacity
+  TouchableOpacity,
+  StyleSheet
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
@@ -158,6 +159,13 @@ const Index: React.FC<IndexProps> = () => {
           ))
         )}
       </ScrollView>
+
+      <TouchableOpacity 
+        style={styles.fab}
+        onPress={() => router.push('/voice-input')}
+      >
+        <Ionicons name="mic" size={24} color="white" />
+      </TouchableOpacity>
 
       <BottomDrawer 
         isVisible={drawerVisible}
