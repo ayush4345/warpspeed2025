@@ -25,6 +25,37 @@ interface CardProps {
   onViewDetail: () => void;
 }
 
+interface WorkflowStepProps {
+  icon: string;
+  title: string;
+  description: string;
+  completed?: boolean;
+  isLast?: boolean;
+}
+
+// Workflow Step Component
+const WorkflowStep: React.FC<WorkflowStepProps> = ({ icon, title, description, completed = false, isLast = false }) => {
+  return (
+    <View style={styles.workflowStep}>
+      <View style={styles.workflowIconContainer}>
+        <Text style={styles.workflowIcon}>{icon}</Text>
+        {completed && (
+          <View style={styles.checkmarkContainer}>
+            <Text style={styles.checkmark}>✓</Text>
+          </View>
+        )}
+      </View>
+      
+      <View style={styles.workflowContent}>
+        <Text style={styles.workflowTitle}>{title}</Text>
+        <Text style={styles.workflowDescription}>{description}</Text>
+      </View>
+      
+      {!isLast && <View style={styles.workflowConnector} />}
+    </View>
+  );
+};
+
 const Card: React.FC<CardProps> = ({ title, subtitle, avatarUrl, memberCount, gameType, leagueType, onViewDetail }) => {
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
@@ -146,13 +177,52 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
           {...panResponder.panHandlers}
         >
           <View style={styles.drawerHandle} />
-          <View style={styles.drawerContent}>
-            <Image 
-              source={{ uri: cardData.avatarUrl }} 
-              style={styles.drawerAvatar} 
-            />
-            <Text style={styles.drawerTitle}>{cardData.title}</Text>
+          <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
             <Text style={styles.drawerSubtitle}>{cardData.subtitle}</Text>
+            <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
+              <Text style={styles.drawerSectionTitle}>Workflow</Text>
+              <WorkflowStep
+                icon="📧"
+                title="Gmail findContent"
+                description="email: [Annual Report.pdf], action: [extractContent]"
+                completed={true}
+              />
+              <WorkflowStep
+                icon="📊"
+                title="Quickchart generateChart"
+                description="Generate: [createChart]"
+                completed={true}
+              />
+               <WorkflowStep
+                icon="📊"
+                title="Quickchart generateChart"
+                description="Generate: [createChart]"
+                completed={true}
+              />
+               <WorkflowStep
+                icon="📊"
+                title="Quickchart generateChart"
+                description="Generate: [createChart]"
+                completed={true}
+              />
+              <WorkflowStep
+                icon="📊"
+                title="Quickchart generateChart"
+                description="Generate: [createChart]"
+                completed={true}
+              />
+              <WorkflowStep
+                icon="𝕏"
+                title="X/Twitter createThread"
+                description="tweets: [objectObject], [createPost]"
+                completed={true}
+                isLast={true}
+              />
+              
+              <View style={styles.workflowResult}>
+                <Text style={styles.workflowResultText}>Your post with Annual Report has been successfully posted to Twitter.</Text>
+              </View>
+            </ScrollView>
             
             <View style={styles.drawerSection}>
               <Text style={styles.drawerSectionTitle}>Details</Text>
@@ -161,18 +231,10 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
               {cardData.leagueType && <Text style={styles.drawerText}>League: {cardData.leagueType}</Text>}
             </View>
             
-            <View style={styles.drawerSection}>
-              <Text style={styles.drawerSectionTitle}>Description</Text>
-              <Text style={styles.drawerText}>
-                This is additional information about this activity. You can add more details here
-                about what this activity involves, when it takes place, and other relevant information.
-              </Text>
-            </View>
-            
             <TouchableOpacity style={styles.drawerButton}>
               <Text style={styles.drawerButtonText}>Join Activity</Text>
             </TouchableOpacity>
-          </View>
+          </ScrollView>
         </Animated.View>
       </View>
     </Modal>
@@ -298,13 +360,14 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
-    marginTop: 40,
+    marginTop: 20,
   },
   sectionHeader: {
     fontSize: 18,
@@ -434,8 +497,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    height: '70%',
-    paddingBottom: 20,
+    height: '80%',
+    maxHeight: '80%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
@@ -451,8 +514,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 10,
   },
+  drawerScrollView: {
+    flex: 1,
+  },
   drawerContent: {
     padding: 20,
+    paddingBottom: 40,
     alignItems: 'center',
   },
   drawerAvatar: {
@@ -499,5 +566,71 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  workflowStep: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  workflowIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#1E1E1E',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+    position: 'relative',
+  },
+  workflowIcon: {
+    fontSize: 24,
+  },
+  checkmarkContainer: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  workflowContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  workflowTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  workflowDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  workflowConnector: {
+    position: 'absolute',
+    left: 25,
+    top: 50,
+    width: 2,
+    height: 30,
+    backgroundColor: '#555',
+  },
+  workflowResult: {
+    backgroundColor: '#f0f0f0',
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 10,
+    marginLeft: 50,
+  },
+  workflowResultText: {
+    fontSize: 14,
+    color: '#333',
   },
 });
