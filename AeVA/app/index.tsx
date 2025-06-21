@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -9,9 +9,12 @@ import {
   Modal,
   Animated,
   Dimensions,
-  PanResponder
+  PanResponder,
+  Button
 } from 'react-native';
 import { RNCamera } from 'react-native-camera';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync, sendPushNotification, registerDeviceWithServer } from "./lib/notifications";
 
 interface IndexProps {}
 
@@ -185,6 +188,8 @@ const Index: React.FC<IndexProps> = () => {
   const cameraRef = useRef<RNCamera>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState<Notifications.Notification | false>(false);
 
   // Sample data for cards
   const cards = [
@@ -259,10 +264,49 @@ const Index: React.FC<IndexProps> = () => {
     setDrawerVisible(true);
   };
 
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token: string | undefined) => {
+      if(token) {
+        setExpoPushToken(token);
+        registerDeviceWithServer(token);
+      }
+    });
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
+
   return (
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
         <Text style={styles.headerText}>Leagues</Text>
+        <View style={{ padding: 20 }}>
+          <Text>Your Expo Push Token:</Text>
+          <Text selectable>{expoPushToken}</Text>
+          {notification && (
+            <View>
+              <Text>Title: {notification.request.content.title}</Text>
+              <Text>Body: {notification.request.content.body}</Text>
+              <Text>Data: {JSON.stringify(notification.request.content.data)}</Text>
+            </View>
+          )}
+          <Button
+            title="Send Test Notification"
+            onPress={async () => {
+              await sendPushNotification(expoPushToken);
+            }}
+          />
+        </View>
         {cards.map((card, index) => (
           <Card
             key={index}
