@@ -41,3 +41,4 @@ app-example
 # Firebase Notifications related
 aeva-3a3ff-firebase-adminsdk-fbsvc-6cade19c7b.json
 google-services.json
+.env*

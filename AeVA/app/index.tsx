@@ -15,6 +15,7 @@ import {
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
 import { useRouter } from 'expo-router';
+import { supabase, fetchData } from './lib/supabase';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface IndexProps {}
@@ -106,17 +107,13 @@ const Card: React.FC<CardProps> = ({ title, subtitle, avatarUrl, memberCount, ga
 interface BottomDrawerProps {
   isVisible: boolean;
   onClose: () => void;
-  cardData: {
-    title: string;
-    subtitle: string;
-    avatarUrl: string;
-    memberCount: number;
-    gameType?: string;
-    leagueType?: string;
-  } | null;
+  cardData: Workflow | null;
+  workflowSteps: WorkflowStep[];
+  loadingSteps: boolean;
+  stepsError: string | null;
 }
 
-const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardData }) => {
+const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardData, workflowSteps, loadingSteps, stepsError }) => {
   const screenHeight = Dimensions.get('window').height;
   const panY = useRef(new Animated.Value(screenHeight)).current;
   const translateY = panY.interpolate({
@@ -182,57 +179,47 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
         >
           <View style={styles.drawerHandle} />
           <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
-            <Text style={styles.drawerSubtitle}>{cardData.subtitle}</Text>
+            <Text style={styles.drawerSubtitle}>{cardData.description}</Text>
             <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
-              <Text style={styles.drawerSectionTitle}>Workflow</Text>
-              <WorkflowStep
-                icon="📧"
-                title="Gmail findContent"
-                description="email: [Annual Report.pdf], action: [extractContent]"
-                completed={true}
-              />
-              <WorkflowStep
-                icon="📊"
-                title="Quickchart generateChart"
-                description="Generate: [createChart]"
-                completed={true}
-              />
-               <WorkflowStep
-                icon="📊"
-                title="Quickchart generateChart"
-                description="Generate: [createChart]"
-                completed={true}
-              />
-               <WorkflowStep
-                icon="📊"
-                title="Quickchart generateChart"
-                description="Generate: [createChart]"
-                completed={true}
-              />
-              <WorkflowStep
-                icon="📊"
-                title="Quickchart generateChart"
-                description="Generate: [createChart]"
-                completed={true}
-              />
-              <WorkflowStep
-                icon="𝕏"
-                title="X/Twitter createThread"
-                description="tweets: [objectObject], [createPost]"
-                completed={true}
-                isLast={true}
-              />
+              <Text style={styles.drawerSectionTitle}>Workflow Steps</Text>
               
-              <View style={styles.workflowResult}>
-                <Text style={styles.workflowResultText}>Your post with Annual Report has been successfully posted to Twitter.</Text>
-              </View>
+              {loadingSteps ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>Loading steps...</Text>
+                </View>
+              ) : stepsError ? (
+                <View style={styles.errorContainer}>
+                  <Text style={styles.errorText}>{stepsError}</Text>
+                </View>
+              ) : workflowSteps.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No steps found for this workflow</Text>
+                </View>
+              ) : (
+                workflowSteps.map((step, index) => (
+                  <WorkflowStep
+                    key={step.id}
+                    icon={getIconForProvider(step.provider)}
+                    title={`${step.provider} ${step.tool}`}
+                    description={step.description}
+                    completed={true}
+                    isLast={index === workflowSteps.length - 1}
+                  />
+                ))
+              )}
+              
+              {workflowSteps.length > 0 && (
+                <View style={styles.workflowResult}>
+                  <Text style={styles.workflowResultText}>Workflow completed successfully.</Text>
+                </View>
+              )}
             </ScrollView>
             
             <View style={styles.drawerSection}>
               <Text style={styles.drawerSectionTitle}>Details</Text>
-              <Text style={styles.drawerText}>Members: {cardData.memberCount}</Text>
-              {cardData.gameType && <Text style={styles.drawerText}>Type: {cardData.gameType}</Text>}
-              {cardData.leagueType && <Text style={styles.drawerText}>League: {cardData.leagueType}</Text>}
+              <Text style={styles.drawerText}>Created: {new Date(cardData.created_at).toLocaleString()}</Text>
+              <Text style={styles.drawerText}>Updated: {new Date(cardData.updated_at).toLocaleString()}</Text>
+              <Text style={styles.drawerText}>Triggered by: {cardData.triggered_by}</Text>
             </View>
             
             <TouchableOpacity style={styles.drawerButton}>
@@ -245,84 +232,92 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
   );
 };
 
+// Define interfaces to match our Supabase table structure
+interface Workflow {
+  id: number;
+  created_at: string;
+  name: string;
+  triggered_by: string;
+  description: string;
+  updated_at: string;
+}
+
+interface WorkflowStep {
+  id: number;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  description: string;
+  provider: string;
+  tool: string;
+  workflow_id: number;
+}
+
 const Index: React.FC<IndexProps> = () => {
   const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [expoPushToken, setExpoPushToken] = useState('');
   const [notification, setNotification] = useState<Notifications.Notification | false>(false);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [workflowSteps, setWorkflowSteps] = useState<WorkflowStep[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingSteps, setLoadingSteps] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [stepsError, setStepsError] = useState<string | null>(null);
 
-  // Sample data for cards
-  const cards = [
-    {
-      title: 'My first league',
-      subtitle: 'You can create your first league here',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/1.jpg',
-      memberCount: 12,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'Fantasy Football',
-      subtitle: 'Join the fantasy football league',
-      avatarUrl: 'https://randomuser.me/api/portraits/women/2.jpg',
-      memberCount: 8,
-      gameType: 'Game pick',
-      leagueType: 'Standard'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
-    },
-    {
-      title: 'NBA Champions',
-      subtitle: 'Predict the next NBA champion',
-      avatarUrl: 'https://randomuser.me/api/portraits/men/3.jpg',
-      memberCount: 15,
-      gameType: 'Game pick',
-      leagueType: 'Dynasty'
+  // Fetch workflows data from Supabase
+  useEffect(() => {
+    async function fetchWorkflows() {
+      try {
+        setLoading(true);
+        const data = await fetchData<Workflow>('Workflow', {
+          columns: '*',
+          order: { column: 'updated_at', ascending: false },
+          limit: 20
+        });
+        
+        if (data) {
+          setWorkflows(data);
+        }
+      } catch (err) {
+        console.error('Error fetching workflows:', err);
+        setError('Failed to load workflows');
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
 
-  const handleViewDetail = (card: any) => {
-    setSelectedCard(card);
+    fetchWorkflows();
+  }, []);
+  
+  // Fetch workflow steps when a workflow is selected
+  const fetchWorkflowSteps = async (workflowId: number) => {
+    try {
+      setLoadingSteps(true);
+      setStepsError(null);
+      
+      const steps = await fetchData<WorkflowStep>('WorkflowStep', {
+        columns: '*',
+        filter: [{ column: 'workflow_id', operator: 'eq', value: workflowId }],
+        order: { column: 'created_at', ascending: true }
+      });
+      
+      if (steps) {
+        setWorkflowSteps(steps);
+      }
+    } catch (err) {
+      console.error('Error fetching workflow steps:', err);
+      setStepsError('Failed to load workflow steps');
+    } finally {
+      setLoadingSteps(false);
+    }
+  };
+
+  const handleViewDetail = (workflow: Workflow) => {
+    setSelectedCard(workflow);
     setDrawerVisible(true);
+    fetchWorkflowSteps(workflow.id);
   };
 
   const navigateToSettings = () => {
@@ -355,39 +350,113 @@ const Index: React.FC<IndexProps> = () => {
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>Leagues</Text>
+          <Text style={styles.headerText}>Agent In Box</Text>
           <TouchableOpacity onPress={navigateToSettings}>
             <View style={styles.settingsIcon}>
               <Text style={styles.settingsIconText}><Ionicons name="settings" size={24} color="black" /></Text>
             </View>
           </TouchableOpacity>
         </View>
-        {cards.map((card, index) => (
-          <Card
-            key={index}
-            title={card.title}
-            subtitle={card.subtitle}
-            avatarUrl={card.avatarUrl}
-            memberCount={card.memberCount}
-            gameType={card.gameType}
-            leagueType={card.leagueType}
-            onViewDetail={() => handleViewDetail(card)}
-          />
-        ))}
+        
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading workflows...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : workflows.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No workflows found</Text>
+          </View>
+        ) : (
+          workflows.map((workflow, index) => (
+            <Card
+              key={workflow.id}
+              title={workflow.name}
+              subtitle={workflow.description}
+              avatarUrl={`https://ui-avatars.com/api/?name=${encodeURIComponent(workflow.name)}&background=random`}
+              memberCount={1}
+              gameType={workflow.triggered_by}
+              leagueType={new Date(workflow.updated_at).toLocaleDateString()}
+              onViewDetail={() => handleViewDetail(workflow)}
+            />
+          ))
+        )}
       </ScrollView>
 
       <BottomDrawer 
         isVisible={drawerVisible}
         onClose={() => setDrawerVisible(false)}
         cardData={selectedCard}
+        workflowSteps={workflowSteps}
+        loadingSteps={loadingSteps}
+        stepsError={stepsError}
       />
     </View>
   );
 }
 
+// Helper function to get an appropriate icon for each provider
+function getIconForProvider(provider: string): string {
+  const iconMap: {[key: string]: string} = {
+    'Gmail': '📧',
+    'Quickchart': '📊',
+    'Twitter': '𝕏',
+    'X': '𝕏',
+    'Google': '🔍',
+    'Slack': '💬',
+    'Discord': '🎮',
+    'GitHub': '📦',
+    'Notion': '📝',
+    'Airtable': '📋',
+    'Zapier': '⚡',
+    'IFTTT': '🔄',
+    'Zoom': '🎥',
+    'Dropbox': '📁',
+    'Drive': '📁',
+    'Calendar': '📅',
+    'Sheets': '📊',
+    'Docs': '📄'
+  };
+  
+  return iconMap[provider] || '🔧'; // Default icon if provider not found
+}
+
 export default Index;
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffeeee',
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#cc0000',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -405,7 +474,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 16,
-    marginTop: 0,
+    marginTop: 10,
   },
   headerText: {
     fontSize: 24,

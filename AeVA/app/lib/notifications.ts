@@ -16,7 +16,7 @@ Notifications.setNotificationHandler({
 export async function sendPushNotification(expoPushToken: string) {
   // IMPORTANT: Replace with your server's IP address.
   // On a real device, this should be your computer's IP on the local network.
-  const serverUrl = 'http://192.168.1.10:3000/send-push'; 
+  const serverUrl = 'http://192.168.1.10:8081/send-push'; 
   console.log(`Sending notification request to ${serverUrl} for token: ${expoPushToken}`);
   
   try {
@@ -73,7 +73,7 @@ export async function registerForPushNotificationsAsync() {
 export async function registerDeviceWithServer(token: string) {
     // IMPORTANT: Replace with your server's IP address.
     // On a real device, this should be your computer's IP on the local network.
-    const serverUrl = 'http://192.168.1.10:3000/register';
+    const serverUrl = 'http://192.168.1.10:8081/register';
     try {
         await fetch(serverUrl, {
             method: 'POST',
