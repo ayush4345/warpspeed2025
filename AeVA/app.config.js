@@ -1,4 +1,4 @@
-{
+export default {
   "expo": {
     "name": "AeVA",
     "slug": "AeVA",
@@ -18,9 +18,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json"
     },
-
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -37,7 +36,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "missingDimensionStrategy": ["general"]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -49,4 +56,4 @@
       }
     }
   }
-}
+}; 

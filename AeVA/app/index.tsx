@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   StyleSheet, 
   Text, 
@@ -9,9 +9,13 @@ import {
   Modal,
   Animated,
   Dimensions,
-  PanResponder
+  PanResponder,
+  Button
 } from 'react-native';
-import { RNCamera } from 'react-native-camera';
+import { useRouter } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import * as Notifications from 'expo-notifications';
+import { registerForPushNotificationsAsync, sendPushNotification, registerDeviceWithServer } from "./lib/notifications";
 
 interface IndexProps {}
 
@@ -242,11 +246,11 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
 };
 
 const Index: React.FC<IndexProps> = () => {
-  const [inputText, setInputText] = useState('');
-  const [cameraVisible, setCameraVisible] = useState(false);
-  const cameraRef = useRef<RNCamera>(null);
+  const router = useRouter();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
+  const [expoPushToken, setExpoPushToken] = useState('');
+  const [notification, setNotification] = useState<Notifications.Notification | false>(false);
 
   // Sample data for cards
   const cards = [
@@ -321,10 +325,43 @@ const Index: React.FC<IndexProps> = () => {
     setDrawerVisible(true);
   };
 
+  const navigateToSettings = () => {
+    router.push('/settings');
+  };
+
+  useEffect(() => {
+    registerForPushNotificationsAsync().then((token: string | undefined) => {
+      if(token) {
+        setExpoPushToken(token);
+        registerDeviceWithServer(token);
+      }
+    });
+
+    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
+      setNotification(notification);
+    });
+
+    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
+      console.log(response);
+    });
+
+    return () => {
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }, []);
+
   return (
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
-        <Text style={styles.headerText}>Leagues</Text>
+        <View style={styles.headerContainer}>
+          <Text style={styles.headerText}>Leagues</Text>
+          <TouchableOpacity onPress={navigateToSettings}>
+            <View style={styles.settingsIcon}>
+              <Text style={styles.settingsIconText}><Ionicons name="settings" size={24} color="black" /></Text>
+            </View>
+          </TouchableOpacity>
+        </View>
         {cards.map((card, index) => (
           <Card
             key={index}
@@ -363,11 +400,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    marginTop: 0,
+  },
   headerText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 16,
-    marginTop: 20,
+  },
+  settingsIcon: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsIconText: {
+    fontSize: 24,
   },
   sectionHeader: {
     fontSize: 18,
