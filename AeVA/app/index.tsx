@@ -20,48 +20,106 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 interface IndexProps {}
 
+function formatDate(date: Date): string {
+  const day = date.getDate();
+  const month = date.toLocaleString('default', { month: 'short' });
+  const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  
+  // Add ordinal suffix to day
+  const ordinalSuffix = getOrdinalSuffix(day);
+  
+  return `${day}${ordinalSuffix} ${month}, ${time}`;
+}
+
+// Helper function to get ordinal suffix for a number (1st, 2nd, 3rd, etc.)
+function getOrdinalSuffix(day: number): string {
+  if (day > 3 && day < 21) return 'th';
+  switch (day % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
+}
+
+// Helper function to get icon for provider
+function getIconForProvider(tool: string): any {
+  // Convert tool name to lowercase for case-insensitive matching
+  const toolLower = tool?.toLowerCase() || '';
+  
+  // Static mapping of tool names to icon resources
+  // React Native requires static strings in require statements
+  const iconMapping: {[key: string]: any} = {
+    // Direct mappings
+    'calendar': require('../assets/icons/calendar.png'),
+    'discord': require('../assets/icons/discord.png'),
+    'docs': require('../assets/icons/docs.png'),
+    'drive': require('../assets/icons/drive.png'),
+    'dropbox': require('../assets/icons/dropbox.png'),
+    'github': require('../assets/icons/github.png'),
+    'gmail': require('../assets/icons/gmail.png'),
+    'google': require('../assets/icons/google.png'),
+    'slack': require('../assets/icons/slack.png'),
+    'twitter': require('../assets/icons/twitter.png'),
+    'x': require('../assets/icons/x.png'),
+    
+    // Aliases
+    'mail': require('../assets/icons/gmail.png'),
+    'email': require('../assets/icons/gmail.png'),
+    'chart': require('../assets/icons/google.png'),
+    'quickchart': require('../assets/icons/google.png'),
+    'tweet': require('../assets/icons/twitter.png'),
+    'git': require('../assets/icons/github.png'),
+    'chat': require('../assets/icons/slack.png'),
+    'message': require('../assets/icons/slack.png'),
+    'document': require('../assets/icons/docs.png'),
+    'storage': require('../assets/icons/drive.png'),
+  };
+  
+  // Return the mapped icon or default to Google icon
+  return iconMapping[toolLower] || require('../assets/icons/google.png');
+}
+
 interface CardProps {
   title: string;
   subtitle: string;
   avatarUrl: string;
   memberCount: number;
-  gameType?: string;
-  leagueType?: string;
+  triggeredBy?: string;
+  updatedAt?: string;
   onViewDetail: () => void;
 }
 
 interface WorkflowStepProps {
-  icon: string;
-  title: string;
+  name: string;
   description: string;
+  provider: string;
+  tool: string;
   completed?: boolean;
   isLast?: boolean;
 }
 
 // Workflow Step Component
-const WorkflowStep: React.FC<WorkflowStepProps> = ({ icon, title, description, completed = false, isLast = false }) => {
+const WorkflowStep: React.FC<WorkflowStepProps> = ({ name, description, provider, tool, isLast = false }) => {
   return (
     <View style={styles.workflowStep}>
-      <View style={styles.workflowIconContainer}>
-        <Text style={styles.workflowIcon}>{icon}</Text>
-        {completed && (
-          <View style={styles.checkmarkContainer}>
-            <Text style={styles.checkmark}>✓</Text>
-          </View>
-        )}
+      <View style={styles.stepIconContainer}>
+        <Image 
+          source={getIconForProvider(provider || '')}
+          style={styles.stepIcon}
+          resizeMode="contain"
+        />
+        {!isLast && <View style={styles.workflowConnector} />}
       </View>
-      
-      <View style={styles.workflowContent}>
-        <Text style={styles.workflowTitle}>{title}</Text>
-        <Text style={styles.workflowDescription}>{description}</Text>
+      <View style={styles.stepContent}>
+        <Text style={styles.stepName}>{name}</Text>
+        {tool && <Text style={styles.stepTool}>Tool: {tool}</Text>}
       </View>
-      
-      {!isLast && <View style={styles.workflowConnector} />}
     </View>
   );
 };
 
-const Card: React.FC<CardProps> = ({ title, subtitle, avatarUrl, memberCount, gameType, leagueType, onViewDetail }) => {
+const Card: React.FC<CardProps> = ({ title, subtitle, avatarUrl, memberCount, triggeredBy, updatedAt, onViewDetail }) => {
   const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   
   return (
@@ -69,10 +127,11 @@ const Card: React.FC<CardProps> = ({ title, subtitle, avatarUrl, memberCount, ga
       {/* First line: Avatar and time */}
       <View style={styles.cardFirstLine}>
         <Image 
-          source={{ uri: avatarUrl }} 
-          style={styles.avatar} 
+          source={getIconForProvider(triggeredBy || '')}
+          style={styles.stepIcon} 
+          resizeMode="contain"
         />
-        <Text style={styles.timeText}>{currentTime}</Text>
+        <Text style={styles.timeText}>{updatedAt}</Text>
       </View>
       
       {/* Second line: Title and description */}
@@ -181,8 +240,6 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
           <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
             <Text style={styles.drawerSubtitle}>{cardData.description}</Text>
             <ScrollView style={styles.drawerScrollView} contentContainerStyle={styles.drawerContent}>
-              <Text style={styles.drawerSectionTitle}>Workflow Steps</Text>
-              
               {loadingSteps ? (
                 <View style={styles.loadingContainer}>
                   <Text style={styles.loadingText}>Loading steps...</Text>
@@ -199,9 +256,10 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
                 workflowSteps.map((step, index) => (
                   <WorkflowStep
                     key={step.id}
-                    icon={getIconForProvider(step.provider)}
-                    title={`${step.provider} ${step.tool}`}
+                    name={step.name}
                     description={step.description}
+                    provider={step.provider}
+                    tool={step.tool}
                     completed={true}
                     isLast={index === workflowSteps.length - 1}
                   />
@@ -350,7 +408,7 @@ const Index: React.FC<IndexProps> = () => {
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
         <View style={styles.headerContainer}>
-          <Text style={styles.headerText}>Agent In Box</Text>
+          <Text style={styles.headerText}>Agent Inbox</Text>
           <TouchableOpacity onPress={navigateToSettings}>
             <View style={styles.settingsIcon}>
               <Text style={styles.settingsIconText}><Ionicons name="settings" size={24} color="black" /></Text>
@@ -378,8 +436,8 @@ const Index: React.FC<IndexProps> = () => {
               subtitle={workflow.description}
               avatarUrl={`https://ui-avatars.com/api/?name=${encodeURIComponent(workflow.name)}&background=random`}
               memberCount={1}
-              gameType={workflow.triggered_by}
-              leagueType={new Date(workflow.updated_at).toLocaleDateString()}
+              triggeredBy={workflow.triggered_by}
+              updatedAt={formatDate(new Date(workflow.updated_at))}
               onViewDetail={() => handleViewDetail(workflow)}
             />
           ))
@@ -398,35 +456,46 @@ const Index: React.FC<IndexProps> = () => {
   );
 }
 
-// Helper function to get an appropriate icon for each provider
-function getIconForProvider(provider: string): string {
-  const iconMap: {[key: string]: string} = {
-    'Gmail': '📧',
-    'Quickchart': '📊',
-    'Twitter': '𝕏',
-    'X': '𝕏',
-    'Google': '🔍',
-    'Slack': '💬',
-    'Discord': '🎮',
-    'GitHub': '📦',
-    'Notion': '📝',
-    'Airtable': '📋',
-    'Zapier': '⚡',
-    'IFTTT': '🔄',
-    'Zoom': '🎥',
-    'Dropbox': '📁',
-    'Drive': '📁',
-    'Calendar': '📅',
-    'Sheets': '📊',
-    'Docs': '📄'
-  };
-  
-  return iconMap[provider] || '🔧'; // Default icon if provider not found
-}
-
 export default Index;
 
 const styles = StyleSheet.create({
+  // WorkflowStep styles
+  stepIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  stepIcon: {
+    width: 24,
+    height: 24,
+  },
+  stepContent: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  stepName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  stepDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  stepProvider: {
+    fontSize: 12,
+    color: '#888',
+  },
+  stepTool: {
+    fontSize: 12,
+    color: '#888',
+    fontStyle: 'italic',
+  },
   loadingContainer: {
     padding: 20,
     alignItems: 'center',
@@ -736,11 +805,11 @@ const styles = StyleSheet.create({
   },
   workflowConnector: {
     position: 'absolute',
-    left: 25,
-    top: 50,
-    width: 2,
+    left: 20,
+    top: 40,
+    width: 1.5,
     height: 30,
-    backgroundColor: '#555',
+    backgroundColor: '#888',
   },
   workflowResult: {
     backgroundColor: '#f0f0f0',
