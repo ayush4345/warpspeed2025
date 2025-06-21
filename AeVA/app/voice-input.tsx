@@ -72,28 +72,36 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
   const processAudioFile = async (uri: string) => {
     try {
       setIsLoading(true);
-      const formData = new FormData();
       
-      // Add the audio file to FormData
-      formData.append('audio', {
-        uri: uri,
-        type: 'audio/m4a',
-        name: 'recording.m4a'
-      } as any);
+      // Create blob from uri
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      
+      const formData = new FormData();
+      formData.append('file', blob, 'recording.m4a');
 
       // Call the Sarvam.ai API
-      const response = await fetch("https://api.sarvam.ai/speech-to-text-translate", {
+      const apiResponse = await fetch("https://api.sarvam.ai/speech-to-text-translate", {
         method: "POST",
         headers: {
-          "api-subscription-key": process.env.SARVAM_API_KEY || "your-api-key-here"
+          "api-subscription-key": process.env.EXPO_PUBLIC_SARVAM_API_KEY || '',
         },
         body: formData,
       });
 
-      console.log("response", response);
-      const data = await response.json();
-      if (data.text) {
-        setTranscribedText(data.text);
+      console.log("Response status:", apiResponse.status);
+      const responseText = await apiResponse.text();
+      console.log("Response text:", responseText);
+
+      if (!apiResponse.ok) {
+        throw new Error(`API Error: ${apiResponse.status} - ${responseText}`);
+      }
+
+      const data = JSON.parse(responseText);
+      if (data.transcript) {
+        setTranscribedText(data.transcript);
+      } else {
+        throw new Error('No transcription found in response');
       }
     } catch (error) {
       console.error('Error processing audio:', error);
