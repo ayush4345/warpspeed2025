@@ -47,9 +47,8 @@ export const Card: React.FC<CardProps> = ({
       <View style={styles.cardFooter}>
         <View style={styles.memberContainer}>
           {steps.map((step, index) => (
-            <View style={[styles.memberAvatars, { marginLeft: index * -25 }]}>
+            <View key={step.id} style={[styles.memberAvatars, { marginLeft: index * -25 }]}>
               <Image
-                key={index}
                 source={getIconForProvider(step.provider)}
                 style={styles.memberAvatar}
                 resizeMode="contain"
