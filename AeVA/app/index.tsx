@@ -15,7 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import * as Notifications from 'expo-notifications';
-import { registerForPushNotificationsAsync, sendPushNotification, registerDeviceWithServer } from "./lib/notifications";
+import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
 
 interface IndexProps {}
 
