@@ -12,7 +12,6 @@ import {
   PanResponder,
   Button
 } from 'react-native';
-import { RNCamera } from 'react-native-camera';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, sendPushNotification, registerDeviceWithServer } from "./lib/notifications";
 
@@ -183,9 +182,6 @@ const BottomDrawer: React.FC<BottomDrawerProps> = ({ isVisible, onClose, cardDat
 };
 
 const Index: React.FC<IndexProps> = () => {
-  const [inputText, setInputText] = useState('');
-  const [cameraVisible, setCameraVisible] = useState(false);
-  const cameraRef = useRef<RNCamera>(null);
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [selectedCard, setSelectedCard] = useState<any>(null);
   const [expoPushToken, setExpoPushToken] = useState('');
