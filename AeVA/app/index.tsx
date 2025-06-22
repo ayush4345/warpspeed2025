@@ -161,7 +161,7 @@ const Index: React.FC<IndexProps> = () => {
             <Card
               key={workflow.id}
               title={workflow.name}
-              subtitle={workflow.description}
+              subtitle={workflow.body && workflow.body.length > 90 ? `${workflow.body.substring(0, 90)}...` : workflow.body}
               steps={workflowSteps.filter(step => step.workflow_id === workflow.id)}
               avatarUrl={`https://ui-avatars.com/api/?name=${encodeURIComponent(workflow.name)}&background=random`}
               stepCount={workflowSteps.filter(step => step.workflow_id === workflow.id).length}

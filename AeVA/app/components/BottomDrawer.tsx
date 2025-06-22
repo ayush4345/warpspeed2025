@@ -15,7 +15,7 @@ import { styles } from '../styles';
 export interface Workflow {
   id: number;
   name: string;
-  description: string;
+  body: string;
   triggered_by: string;
   updated_at: string;
 }
