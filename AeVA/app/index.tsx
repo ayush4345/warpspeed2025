@@ -98,6 +98,10 @@ const Index: React.FC<IndexProps> = () => {
     router.push('/settings');
   };
 
+  const navigateToDailyDigest = () => {
+    router.push('/daily-digest');
+  };
+
   useEffect(() => {
     registerForPushNotificationsAsync().then((token: string | undefined) => {
       if(token) {
@@ -135,11 +139,20 @@ const Index: React.FC<IndexProps> = () => {
       <ScrollView style={styles.scrollView}>
         <View style={styles.headerContainer}>
           <Text style={styles.headerText}>Agent Inbox</Text>
-          <TouchableOpacity onPress={navigateToSettings}>
-            <View style={styles.settingsIcon}>
-              <Text style={styles.settingsIconText}><Ionicons name="settings" size={24} color="black" /></Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              onPress={navigateToDailyDigest}
+              style={[styles.headerButton, styles.digestButton]}
+            >
+              <Ionicons name="headset" size={24} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              onPress={navigateToSettings}
+              style={styles.headerButton}
+            >
+              <Ionicons name="settings" size={24} color="black" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Tab Navigation */}
