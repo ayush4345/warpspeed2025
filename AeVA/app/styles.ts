@@ -223,8 +223,9 @@ export const styles = StyleSheet.create({
   drawerText: {
     fontSize: 16,
     color: '#555',
-    marginBottom: 8,
+    marginBottom: 14,
     lineHeight: 22,
+    fontWeight: '600',
   },
   drawerButton: {
     backgroundColor: '#007AFF',
