@@ -36,6 +36,8 @@ export function getIconForProvider(tool: string): any {
     // Direct mappings
     'calendar': require('../../../assets/icons/calendar.png'),
     'discord': require('../../../assets/icons/discord.png'),
+    'supabase': require('../../../assets/icons/supabase.png'),
+    'openai': require('../../../assets/icons/openai.png'),
     'docs': require('../../../assets/icons/docs.png'),
     'drive': require('../../../assets/icons/drive.png'),
     'dropbox': require('../../../assets/icons/dropbox.png'),
