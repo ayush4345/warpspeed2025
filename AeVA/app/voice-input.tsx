@@ -225,6 +225,9 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
       const data = JSON.parse(responseText);
       if (data.transcript) {
         setTranscribedText(data.transcript);
+        
+        // Send transcribed text to n8n webhook
+        await sendToWebhook(data.transcript);
       } else {
         throw new Error('No transcription found in response');
       }
@@ -233,6 +236,32 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
       alert('Failed to process audio. Please try again.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const sendToWebhook = async (message: string) => {
+    try {
+      const webhookUrl = `${process.env.EXPO_PUBLIC_N8N_URL}/webhook-test/ae82ad1a-827d-4a07-9fa7-00b1035c137e`;
+      
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          event: 'test_webhook',
+          message: message,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Webhook Error: ${response.status}`);
+      }
+
+      console.log('Successfully sent to webhook');
+    } catch (error) {
+      console.error('Error sending to webhook:', error);
+      // Don't show alert here to avoid interrupting the user experience
     }
   };
 
