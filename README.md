@@ -1,10 +1,10 @@
-# Medha (मेधा) - Ambient Virtual Assistant
+# 🧠 Medha (मेधा) - Ambient Virtual Assistant
 > Medha (मेधा) represents intelligence and wisdom in Sanskrit, embodying sharp memory and cognitive excellence.
 
-## Overview
+## 👀 Overview
 Medha is the Siri that we all deserved but never got. Unlike all other virtual assistants, Medha is not reactive in nature but proactive. It has access to all your tools that you configure, and it just automatically does the right thing at the right time.
 
-## Problem Statement
+## ⚡ Problem Statement
 Current virtual assistants have fundamental limitations:
 - They are reactive, waiting for user commands rather than taking initiative
 - They operate in isolation, lacking context about your digital ecosystem
@@ -12,7 +12,7 @@ Current virtual assistants have fundamental limitations:
 - They don't learn from your patterns or anticipate your needs
 - They fail to leverage the full potential of your digital tools and workflows
 
-## Our Solution
+## 💡 Our Solution
 Medha reimagines virtual assistance through ambient computing:
 - **Proactive Intelligence**: Anticipates needs and takes action before being asked
 - **Ambient Awareness**: Maintains continuous awareness of your digital context
@@ -24,31 +24,30 @@ Medha reimagines virtual assistance through ambient computing:
   - Delivers information through natural audio interfaces
   - Adapts to your changing needs and priorities
 
+## 🛠️ Tech Stack
 
-## Tech Stack
-
-### Mobile Application (Medha)
+### 📱 Mobile Application (Medha)
 - **Framework**: React Native with Expo
 - **Language**: TypeScript
 - **Audio Processing**: Sarvam AI
 - **Notifications**: Expo Notifications with Firebase Cloud Messaging
 
-### AI Workflow Engine
+### 🔄 AI Workflow Engine
 - **Framework**: n8n
 
-### Server
+### 🖥️ Server
 - **Runtime**: Node.js
 - **Database**: Supabase
 - **Functions**: Deno (Supabase Edge Functions)
 
-### Key Features
+### ✨ Key Features
 - Ambient task monitoring and automation
 - Proactive workflow management
 - Context-aware notifications
 - Intelligent audio digests - daily digest of your tasks and notifications across all your tools
 - Voice reactive mode powered by Sarvam AI enabling you to talk in 11 different languages
 
-## Project Structure
+## 📂 Project Structure
 
 ```
 warpspeed2025/
@@ -59,15 +58,15 @@ warpspeed2025/
 └── server/            # Backend server implementation
 ```
 
-## Getting Started
+## 🚀 Getting Started
 
-### Prerequisites
+### 📋 Prerequisites
 - Node.js (v18 or higher)
 - pnpm (package manager)
 - Expo CLI
 - iOS Simulator or Android Emulator
 
-### Installation
+### 🔧 Installation
 
 1. Clone the repository:
    ```bash
@@ -89,8 +88,8 @@ warpspeed2025/
 
 4. Start the development server:
    ```bash
-       cd ../Medha
-    pnpm start
+   cd ../Medha
+   pnpm start
    ```
 
 5. Run the backend server:
@@ -99,13 +98,12 @@ warpspeed2025/
    npm start
    ```
 
-## Team
+## 👥 Team
 
 - [Ayush Kumar Singh](https://github.com/ayush4345)
 - [Parth Mittal](https://github.com/mittal-parth)
 - [Shubham Rasal](https://github.com/Shubham-Rasal)
 
-
-## License
+## ⚖️ License
 This project is licensed under the MIT License - see the LICENSE file for details.
 
