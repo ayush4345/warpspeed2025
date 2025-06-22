@@ -168,12 +168,41 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
       });
 
       const newRecording = new Audio.Recording();
-      await newRecording.prepareToRecordAsync(Audio.RecordingOptionsPresets.HIGH_QUALITY);
+      await newRecording.prepareToRecordAsync({
+        android: {
+          extension: '.m4a',
+          outputFormat: Audio.AndroidOutputFormat.MPEG_4,
+          audioEncoder: Audio.AndroidAudioEncoder.AAC,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+        },
+        ios: {
+          extension: '.m4a',
+          outputFormat: Audio.IOSOutputFormat.MPEG4AAC,
+          audioQuality: Audio.IOSAudioQuality.HIGH,
+          sampleRate: 44100,
+          numberOfChannels: 1,
+          bitRate: 128000,
+          linearPCMBitDepth: 16,
+          linearPCMIsBigEndian: false,
+          linearPCMIsFloat: false,
+        },
+        web: {
+          mimeType: 'audio/wav',
+          bitsPerSecond: 128000,
+        },
+      });
       await newRecording.startAsync();
       setRecording(newRecording);
       setIsRecording(true);
     } catch (err) {
       console.error('Failed to start recording', err);
+      if (err instanceof Error) {
+        alert(`Failed to start recording: ${err.message}`);
+      } else {
+        alert('Failed to start recording');
+      }
     }
   };
 
@@ -198,31 +227,46 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
     try {
       setIsLoading(true);
       
-      // Create blob from uri
-      const response = await fetch(uri);
-      const blob = await response.blob();
-      
       const formData = new FormData();
-      formData.append('file', blob, 'recording.m4a');
+      
+      if (Platform.OS !== 'web') {
+        // For mobile platforms, verify the file exists
+        const fileInfo = await FileSystem.getInfoAsync(uri);
+        if (!fileInfo.exists) {
+          throw new Error('Recorded audio file not found');
+        }
+
+        // For React Native, we can append the file directly using its URI
+        formData.append('file', {
+          uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+          type: 'audio/m4a',
+          name: 'recording.m4a'
+        } as any);
+      } else {
+        // For web, use fetch to get the blob
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        formData.append('file', blob, 'recording.wav');
+      }
 
       // Call the Sarvam.ai API
       const apiResponse = await fetch("https://api.sarvam.ai/speech-to-text-translate", {
         method: "POST",
         headers: {
           "api-subscription-key": process.env.EXPO_PUBLIC_SARVAM_API_KEY || '',
+          "Accept": "application/json",
+          "Content-Type": "multipart/form-data",
         },
         body: formData,
       });
 
-      console.log("Response status:", apiResponse.status);
-      const responseText = await apiResponse.text();
-      console.log("Response text:", responseText);
-
       if (!apiResponse.ok) {
-        throw new Error(`API Error: ${apiResponse.status} - ${responseText}`);
+        const errorText = await apiResponse.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`API Error: ${apiResponse.status} - ${errorText}`);
       }
 
-      const data = JSON.parse(responseText);
+      const data = await apiResponse.json();
       if (data.transcript) {
         setTranscribedText(data.transcript);
         
@@ -233,7 +277,11 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
       }
     } catch (error) {
       console.error('Error processing audio:', error);
-      alert('Failed to process audio. Please try again.');
+      if (error instanceof Error) {
+        alert(`Failed to process audio: ${error.message}`);
+      } else {
+        alert('Failed to process audio. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }
