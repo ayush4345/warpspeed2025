@@ -11,7 +11,7 @@ interface SheetTask {
 }
 
 // Configuration for server API
-const SERVER_API_URL = 'https://fancy-shoes-shake.loca.lt'; // Update with your actual server URL
+const SERVER_API_URL = process.env.EXPO_PUBLIC_SERVER_API_URL; // Update with your actual server URL
 
 /**
  * Fetch tasks from our server API which handles Google Sheets integration
