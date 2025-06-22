@@ -41,6 +41,10 @@ export default {
         "expo-build-properties",
         {
           "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0",
+            "minSdkVersion": 24,
             "missingDimensionStrategy": ["general"]
           }
         }

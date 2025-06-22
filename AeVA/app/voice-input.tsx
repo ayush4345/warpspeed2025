@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   StyleSheet, 
   Text, 
   View, 
   TouchableOpacity, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  Animated,
+  Easing
 } from 'react-native';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { useRouter } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import WaveformAnimation from './components/WaveformAnimation';
 
 interface VoiceInputProps {}
 
@@ -20,6 +25,14 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
   const [transcribedText, setTranscribedText] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Animation values
+  const circle1Scale = useRef(new Animated.Value(1)).current;
+  const circle2Scale = useRef(new Animated.Value(0.8)).current;
+  const circle3Scale = useRef(new Animated.Value(0.6)).current;
+  const circle1Opacity = useRef(new Animated.Value(0.2)).current;
+  const circle2Opacity = useRef(new Animated.Value(0.2)).current;
+  const circle3Opacity = useRef(new Animated.Value(0.2)).current;
+
   useEffect(() => {
     // Request audio recording permissions
     Audio.requestPermissionsAsync();
@@ -27,7 +40,119 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
       allowsRecordingIOS: true,
       playsInSilentModeIOS: true,
     });
-  }, []);
+
+    if (isRecording) {
+      // Circle 1 animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(circle1Scale, {
+              toValue: 1.1,
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle1Opacity, {
+              toValue: 0.1,
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(circle1Scale, {
+              toValue: 1,
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle1Opacity, {
+              toValue: 0.2,
+              duration: 2000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      ).start();
+
+      // Circle 2 animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(circle2Scale, {
+              toValue: 0.9,
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle2Opacity, {
+              toValue: 0.1,
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(circle2Scale, {
+              toValue: 0.8,
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle2Opacity, {
+              toValue: 0.2,
+              duration: 1500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      ).start();
+
+      // Circle 3 animation
+      Animated.loop(
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(circle3Scale, {
+              toValue: 0.7,
+              duration: 1000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle3Opacity, {
+              toValue: 0.1,
+              duration: 1000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(circle3Scale, {
+              toValue: 0.6,
+              duration: 1000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            Animated.timing(circle3Opacity, {
+              toValue: 0.2,
+              duration: 1000,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      ).start();
+    } else {
+      // Reset animations when not recording
+      circle1Scale.setValue(1);
+      circle2Scale.setValue(0.8);
+      circle3Scale.setValue(0.6);
+      circle1Opacity.setValue(0.2);
+      circle2Opacity.setValue(0.2);
+      circle3Opacity.setValue(0.2);
+    }
+  }, [isRecording]);
 
   const startRecording = async () => {
     try {
@@ -115,25 +240,60 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+          <Ionicons name="arrow-back" size={24} color="#666" />
         </TouchableOpacity>
         <Text style={styles.headerText}>Voice Input</Text>
-        <View style={{ width: 24 }} /> {/* Empty view for spacing */}
+        <View style={{ width: 24 }} />
       </View>
 
       <View style={styles.content}>
-        <TouchableOpacity 
-          style={[styles.recordButton, isRecording && styles.recordingButton]}
-          onPress={isRecording ? stopRecording : startRecording}
-        >
-          <Ionicons 
-            name={isRecording ? "stop" : "mic"} 
-            size={32} 
-            color="white" 
+        <View style={styles.circleContainer}>
+          <Animated.View 
+            style={[
+              styles.circle, 
+              styles.circle1,
+              {
+                transform: [{ scale: circle1Scale }],
+                opacity: circle1Opacity,
+              }
+            ]} 
           />
-        </TouchableOpacity>
+          <Animated.View 
+            style={[
+              styles.circle, 
+              styles.circle2,
+              {
+                transform: [{ scale: circle2Scale }],
+                opacity: circle2Opacity,
+              }
+            ]} 
+          />
+          <Animated.View 
+            style={[
+              styles.circle, 
+              styles.circle3,
+              {
+                transform: [{ scale: circle3Scale }],
+                opacity: circle3Opacity,
+              }
+            ]} 
+          />
+          <View style={styles.micContainer}>
+            <TouchableOpacity 
+              style={[styles.recordButton, isRecording && styles.recordingButton]}
+              onPress={isRecording ? stopRecording : startRecording}
+            >
+              <Ionicons 
+                name={isRecording ? "stop" : "mic"} 
+                size={24} 
+                color="white" 
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <Text style={styles.recordingText}>
-          {isRecording ? 'Tap to stop recording' : 'Tap to start recording'}
+          {isRecording ? 'Recording in progress' : 'Tap to start recording'}
         </Text>
 
         {isLoading && (
@@ -154,37 +314,71 @@ const VoiceInput: React.FC<VoiceInputProps> = () => {
   );
 };
 
+const { width } = Dimensions.get('window');
+const circleSize = width * 0.5;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
+    paddingTop: Platform.OS === 'ios' ? 50 : 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
   headerText: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 18,
+    color: '#333',
   },
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingTop: 50,
+    justifyContent: 'center',
+    paddingBottom: 100,
+  },
+  circleContainer: {
+    width: circleSize,
+    height: circleSize,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  circle: {
+    position: 'absolute',
+    borderRadius: circleSize,
+    borderWidth: 1,
+    width: '100%',
+    height: '100%',
+    borderColor: 'rgba(0, 122, 255, 0.2)',
+  },
+  circle1: {
+    transform: [{ scale: 1 }],
+  },
+  circle2: {
+    transform: [{ scale: 0.8 }],
+  },
+  circle3: {
+    transform: [{ scale: 0.6 }],
+  },
+  micContainer: {
+    position: 'absolute',
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+    borderRadius: 35,
+    padding: 8,
   },
   recordButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#007AFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
   recordingButton: {
     backgroundColor: '#FF3B30',
@@ -223,7 +417,7 @@ const styles = StyleSheet.create({
   },
   transcriptionText: {
     fontSize: 16,
-    color: '#444',
+    color: '#666',
     lineHeight: 24,
   },
 });
