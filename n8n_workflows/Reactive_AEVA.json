@@ -1,0 +1,378 @@
+{
+  "name": "Reactive AEVA",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ae82ad1a-827d-4a07-9fa7-00b1035c137e",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -700,
+        -100
+      ],
+      "id": "3d4a4e06-f320-4b71-b1af-551a127c337a",
+      "name": "Webhook",
+      "webhookId": "ae82ad1a-827d-4a07-9fa7-00b1035c137e"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "a9812da9-979a-42f5-a7cb-22faad9df5ae",
+      "name": "OpenAI Chat Model5",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -720,
+        220
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "database",
+        "description": "Retrive Internal documentation about the company"
+      },
+      "id": "e672aa9f-6904-487c-a223-80f27a7eb301",
+      "name": "Vector Store Tool1",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        -140,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "02b46160-f003-4896-968e-02fbe66a3a76",
+      "name": "Embeddings OpenAI2",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        640
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "aeva_documents",
+          "mode": "list",
+          "cachedResultName": "aeva_documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "641a45a3-e1ca-400d-b617-54208abcd5ce",
+      "name": "Supabase Vector Store1",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        460
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "BYwKDiOBnajCmDEa",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e12deffc-3569-4cdc-baea-1cf6486c7c40",
+      "name": "OpenAI Chat Model6",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        240,
+        480
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Based on the following query, use appropriate tools. For calender, use calender agent, for email use the email tools {{ $json.body.message }}",
+        "options": {
+          "systemMessage": "=You are a personal assistant AI Agent designed to handle various tasks efficiently. Your primary role is to manage emails, and calendar events for the user. You have access to three tools to help you fulfill requests:\n\nuse the email id from query.\n\nEmail Get Draft: Use this for handling all draft email-related actions.\n\nEmail Send: Use this tool to send emails\n\nCalendar Agent: Use this for scheduling, updating, or managing calendar events.\n\n\nWhen a task requires using one or more of these tools, make sure to identify which tool is most appropriate, pass along the relevant details, and execute the actions needed to complete the task. Your goal is to be proactive, precise, and organized in managing these resources to provide a smooth experience for the user.\n\nHere is the current time/date: {{ $now}}",
+          "maxIterations": 5
+        }
+      },
+      "id": "f7ce7ac1-4cda-4a1c-ada4-cfba3f4d2211",
+      "name": "Reactive Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -340,
+        -100
+      ]
+    },
+    {
+      "parameters": {
+        "description": "=You are a personal assistant AI Agent designed to handle various tasks efficiently. Your primary role is to manage contacts, emails, and calendar events for the user. You have access to three tools to help you fulfill requests:\n\nContacts Data: Use this when you need to look up contact information like an email address. You need to use this tool BEFORE sending an email or BEFORE getting emails.\n\nEmail Agent: Use this for handling all email-related actions, like sending messages, setting up replies, or forwarding emails.\n\nCalendar Agent: Use this for scheduling, updating, or managing calendar events.\n\nSend Slack Message: Use this to send a message in Slack.\n\nProjects_Agent: Use this tool to access our projects. We can update our projects of get information on our projects.\n\nWhen a task requires using one or more of these tools, make sure to identify which tool is most appropriate, pass along the relevant details, and execute the actions needed to complete the task. Your goal is to be proactive, precise, and organized in managing these resources to provide a smooth experience for the user.\n\nHere is the current time/date: {{ $now.format('DD')}}\n\n",
+        "workflowId": {
+          "__rl": true,
+          "value": "WmDGxDbERKEN5KUI",
+          "mode": "list",
+          "cachedResultName": "Calender Agent"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -340,
+        260
+      ],
+      "id": "e312714c-ec63-4e76-86ac-9d962faec2a3",
+      "name": "Calendar Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -520,
+        240
+      ],
+      "id": "cce7a15f-f876-4fb0-a84c-767258c25900",
+      "name": "Memory",
+      "credentials": {
+        "postgres": {
+          "id": "b0xo0eBowA3z3cZv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('To', ``, 'string') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        580,
+        100
+      ],
+      "id": "2723447c-aba3-44cb-97cc-f4d5eb4b255c",
+      "name": "Gmail",
+      "webhookId": "698ce894-01a7-43b0-9313-e557986fef45",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -1100,
+        220
+      ],
+      "id": "76abb1dd-9d15-49d9-ada0-c5eb924a9afd",
+      "name": "When chat message received",
+      "webhookId": "7cc93e43-664a-4b04-b027-c5e7e28b222c"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "operation": "getAll",
+        "returnAll": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Return_All', ``, 'boolean') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        220,
+        160
+      ],
+      "id": "d82da6f4-1978-454c-8ecc-9853d647c1e2",
+      "name": "Get Draft Emails",
+      "webhookId": "4e8148bd-7edf-498e-8f96-da0fcc0e85b4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Tool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Tool1",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Vector Store Tool1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reactive Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Calendar Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        []
+      ]
+    },
+    "Get Draft Emails": {
+      "ai_tool": [
+        [
+          {
+            "node": "Reactive Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6ba88596-e572-4153-9519-898ca2560e78",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1c93a0e0a0534d1c9cf8a0b527175d25fd9eb1a66b1476102e9cdc72277976c2"
+  },
+  "id": "mLZYJAShCaLgcjbZ",
+  "tags": []
+}

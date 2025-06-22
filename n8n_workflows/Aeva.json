@@ -1,0 +1,983 @@
+{
+  "name": "Aeva",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "id": "76847b43-19d4-4d88-ac99-8ba5b3e673ef",
+      "name": "Gmail Trigger",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "position": [
+        -320,
+        100
+      ],
+      "typeVersion": 1.2,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxTokens": 4096
+        }
+      },
+      "id": "54a2a3ac-a005-4d51-b87a-50b00f8ac221",
+      "name": "OpenAI Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        120,
+        320
+      ],
+      "notesInFlow": false,
+      "typeVersion": 1,
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tool to read a specific message based on the message ID",
+        "operation": "get",
+        "messageId": "={{ $fromAI('gmail_message_id', 'id of the gmail message, like 1944fdc33f544369', 'string') }}"
+      },
+      "id": "3bf0b59e-c8a4-4755-9f64-ed31cc957d8c",
+      "name": "Gmail - get message",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        360,
+        320
+      ],
+      "webhookId": "d8ec9401-a9ff-4fe2-9c1e-5a8036cd96c9",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tool to add label to message",
+        "operation": "addLabels",
+        "messageId": "={{ $json.id }}",
+        "labelIds": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Label_Names_or_IDs', `array of label ids`, 'string') }}"
+      },
+      "id": "fc1ee2d0-23ed-4f70-aa42-abbad3c768e5",
+      "name": "Gmail - add label to message",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        480,
+        320
+      ],
+      "webhookId": "7a87b026-1c6e-40e1-a062-aefdd1af1585",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tool to create a new label, only use if label does not already exist",
+        "resource": "label",
+        "operation": "create",
+        "name": "={{ $fromAI('new_label_name', 'new label name', 'string' ) }} ",
+        "options": {}
+      },
+      "id": "ccf498f1-2ac6-47af-99cc-d0ddb321ce68",
+      "name": "Gmail - create label",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        600,
+        320
+      ],
+      "webhookId": "d8ec9401-a9ff-4fe2-9c1e-5a8036cd96c9",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Label the email based on the details below:\n{{ JSON.stringify($json) }} and add task if labels is Pull Requests or Tickets",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Objective:\nAutomatically categorize incoming emails based on existing Gmail labels or create a new label if none match.\n\nTools:\n- Get message\n- Read all labels\n- Create label\n- Assign label to message\n- Create Task\n\nInstructions:\n\nLabel Matching:\n\nAnalyze the email's subject, sender, recipient, keywords, and content.\nCompare with existing Gmail labels to find the most relevant match.\nLabel Assignment:\n\nAssign the email to the most appropriate existing label.\n`\nRemove the inbox label if the email is of less importance (like ads, promotions, aka \"Reclame\"), keep normal and important emails in the inbox.\n\nIf no suitable label exists, create a new label based on the existing labels or assign it to \"Others\". Try reusing existing labels as much as possible. If no label exists, create the label AI and create the new label under this label.\nLabel Creation:\n\nEnsure new labels align with the structure of existing ones, including capitalization, delimiters, and prefixes.\n\nConsider only the following labels - \"Announcements\", \"Pull Requests\", \"Events\", \"Tickets\", \"Other\", \"Discussions\"\n\nIf labelled as \"Pull Requests\" or \"Tickets\", add a task with a summarised title.\n\nOutcome:\nEmails are consistently categorized under the appropriate or newly created labels, maintaining Gmail's organizational structure.",
+          "maxIterations": 7
+        }
+      },
+      "id": "86d34f47-453e-4fa7-bb19-c2b779648892",
+      "name": "Gmail labelling agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        392,
+        100
+      ],
+      "notesInFlow": true,
+      "retryOnFail": false,
+      "typeVersion": 1.7,
+      "onError": "continueErrorOutput",
+      "notes": "Objective:\nAutomatically categorize incoming emails based on existing Gmail labels or create a new label if none match.\n\nTools:\n- Get message\n- Read all labels\n- Create label\n- Assign label to message\n\nInstructions:\n\nLabel Matching:\n\nAnalyze the email's subject, sender, recipient, keywords, and content.\nCompare with existing Gmail labels to find the most relevant match.\nLabel Assignment:\n\nAssign the email to the most appropriate existing label.`\nRemove the inbox label if the email is of less importance (like ads, promotions, aka \"Reclame\"), keep normal and important emails in the inbox.\nIf no suitable label exists, create a new label based on the existing labels. Try reusing existing labels as much as possible. Always create a label as a sublabel, if no label applies, if the main label already exists, create the new label under the existing label, if no main label exists, create the label AI and create the new label under this label.\nLabel Creation:\n\nEnsure new labels align with the structure of existing ones, including capitalization, delimiters, and prefixes.\nExamples:\n\nIf the email subject is \"Project Alpha Update,\" assign to [Project Alpha] if it exists.\nFor \"New Vendor Inquiry,\" create \"Vendor Inquiry\" if no relevant label exists.\nOutcome:\nEmails are consistently categorized under the appropriate or newly created labels, maintaining Gmail's organizational structure."
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "id": "3617b239-6947-4b03-9861-73812be4998d",
+      "name": "Wait",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        -100,
+        100
+      ],
+      "webhookId": "2066b863-4526-40cf-90aa-82229895a73c",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "1db12796-da3a-44ad-bc30-27b959f56046",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        120,
+        -880
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "name": "database",
+        "description": "Retrive Internal documentation about the company"
+      },
+      "id": "d5a2b974-b622-436c-9e8a-7161129c9518",
+      "name": "Vector Store Tool",
+      "type": "@n8n/n8n-nodes-langchain.toolVectorStore",
+      "typeVersion": 1,
+      "position": [
+        360,
+        -877.5
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "ca68f81f-f839-4fc2-a805-abe23a51f4c8",
+      "name": "Embeddings OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        344,
+        -480
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableName": {
+          "__rl": true,
+          "value": "aeva_documents",
+          "mode": "list",
+          "cachedResultName": "aeva_documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "1dacf9c5-dfb3-4147-ac32-fa81b37e9098",
+      "name": "Supabase Vector Store",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        256,
+        -677.5
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "BYwKDiOBnajCmDEa",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "7e6448fb-f7d3-4ce4-a791-6e8c97f11343",
+      "name": "OpenAI Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1,
+      "position": [
+        552,
+        -680
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "project": {
+          "__rl": true,
+          "value": "2355698834",
+          "mode": "list",
+          "cachedResultName": "Inbox"
+        },
+        "labels": "=",
+        "content": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Content', ``, 'string') }}",
+        "options": {
+          "priority": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Priority', ``, 'number') }}"
+        }
+      },
+      "type": "n8n-nodes-base.todoistTool",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        320
+      ],
+      "id": "452d0c23-3e50-45f9-9d50-4370e3c1745b",
+      "name": "Todoist",
+      "credentials": {
+        "todoistApi": {
+          "id": "cooEo3yhgx7WRavH",
+          "name": "Todoist account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}",
+        "tableName": "n8n_chat_histories_assistant"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        320
+      ],
+      "id": "a5973dfc-7900-435d-8a1c-c4ed7317a418",
+      "name": "Postgres Chat Memory1",
+      "credentials": {
+        "postgres": {
+          "id": "b0xo0eBowA3z3cZv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Tool to read all existing gmail labels",
+        "resource": "label",
+        "returnAll": true
+      },
+      "id": "75e9a060-14f1-48ae-823d-15dc6a8f54cf",
+      "name": "Gmail - read_email",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        840,
+        320
+      ],
+      "webhookId": "d8ec9401-a9ff-4fe2-9c1e-5a8036cd96c9",
+      "typeVersion": 2.1,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -400,
+        -1100
+      ],
+      "id": "b409af94-b247-43d8-af28-9a29660112f0",
+      "name": "Gmail Trigger2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -120,
+        -1100
+      ],
+      "id": "d3731119-952a-4c46-aa0e-e8e6df525057",
+      "name": "Gmail1",
+      "webhookId": "74624641-756c-4989-82e8-717cac97598b",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Draft a helful reply for this email -  {{ $json.text }} and add it to the email from {{ $json.from.value[0].address }}",
+        "options": {
+          "systemMessage": "Here’s a **concise but powerful system prompt** tailored for your AI agent, designed to operate autonomously with access to chat memory, a vector DB of relevant documents, incoming emails, and an email drafting tool.\n\n---\n\n### ✅ **System Prompt: Autonomous Email Agent**\n\n> You are an autonomous email assistant.\n>\n> You have access to the following tools:\n>\n> * **Memory DB**: Persistent chat history and user context.\n> * **Vector DB**: Embeddings of user documents, SOPs, and references. Always use this for reference\n> * **Incoming Email Stream**: Includes metadata (sender, subject, time) and full body.\n> * **Email Drafting Tool**: Allows you to prepare draft responses.\n>\n> Your goal: **Monitor incoming emails and, when appropriate, draft high-quality responses.** Only respond when:\n>\n> * The user is mentioned, expected to respond, or is the recipient.\n> * There is sufficient context in memory or the vector DB to generate a useful draft.\n>\n> Behavior guidelines:\n>\n> 1. **Context-aware**: Use chat memory and vector search to understand past interactions and relevant content.\n> 2. **Proactive**: If an email requires user action or response, immediately draft a reply and notify the user.\n> 3. **Precise and Polite**: Draft emails that are concise, professional, and aligned with the user's communication style.\n> 4. **Unambiguous**: If unsure of user intent or context, suggest a draft with a clarification question instead of hallucinating.\n> 5. **No Redundancy**: Avoid drafting emails if the user has already responded or taken visible action.\n>\n> Output format:\n>\n> * Subject\n> * Drafted Email Body\n> * Confidence Level (Low/Medium/High)\n> * Context References (Memory hits + top Vector DB docs)\n>\n> Example output:\n>\n> ```\n> Subject: Re: Updated Project Timeline\n> Body:\n> Hi Sarah,\n>\n> Thanks for the update. The revised timeline looks good to me. Let’s plan to review progress next Friday.\n>\n> Best,  \n> Shubham\n>\n> Confidence: High  \n> Context used: [Chat Memory: “timeline accepted 2 weeks ago”], [VectorDoc: “project_schedule_v3.pdf”]\n> ```\n\n---\n\nLet me know if you want this adapted for a specific domain (e.g. legal, customer support, sales) or with more tool-specific syntax (like LangChain or n8n).\n",
+          "maxIterations": 5
+        }
+      },
+      "id": "b726e391-23f5-4440-abc3-147452012186",
+      "name": "Email Draft Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        260,
+        -1100
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $execution.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        240,
+        -880
+      ],
+      "id": "cf7902a3-6057-4211-a02c-ac0c52300548",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "b0xo0eBowA3z3cZv",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Subject', ``, 'string') }}",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Message', ``, 'string') }}",
+        "options": {
+          "threadId": "={{ $json.threadId }}",
+          "sendTo": "={{ $fromAI('To_Email', ``, 'string') }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        -880
+      ],
+      "id": "ee2b9090-021c-4b96-b1a0-c7d74a4c789c",
+      "name": "Draft Email",
+      "webhookId": "8d1f8890-6d89-4424-9e85-6a8701ebd6a5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "O6cqvYFa0kGc8WFy",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1xQMuhS4rGxDSFnRm7LTrpyjYLoAznqUYM2PPCFXIvj0",
+          "mode": "list",
+          "cachedResultName": "Notifications",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xQMuhS4rGxDSFnRm7LTrpyjYLoAznqUYM2PPCFXIvj0/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xQMuhS4rGxDSFnRm7LTrpyjYLoAznqUYM2PPCFXIvj0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Gmail1').item.json.id }}",
+            "body": "={{ $json.output.Summary }}",
+            "triggered_at": "={{ $now }}",
+            "title": "={{ $json.output.Title }}",
+            "status": "={{ $json.output.Status }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "body",
+              "displayName": "body",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "triggered_at",
+              "displayName": "triggered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "comment",
+              "displayName": "comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1160,
+        -1100
+      ],
+      "id": "0c9ca092-2dbd-475c-a6d8-b0f58011ec58",
+      "name": "Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "y3dea9zkpOtvUV0l",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Summary",
+              "description": "Summary of the task completed",
+              "required": true
+            },
+            {
+              "name": "Title",
+              "description": "An appropirate and short title for the workflow",
+              "required": true
+            },
+            {
+              "name": "Status",
+              "description": "If task is successfully completed, put SUCCEEDED else PENDING",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -1100
+      ],
+      "id": "b69a1af5-7b71-4e19-9c29-8cca51e9efca",
+      "name": "Information Extractor"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        820,
+        -880
+      ],
+      "id": "2ee86fd7-7414-4d23-8de5-45f439969c6c",
+      "name": "OpenAI Chat Model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "Workflow",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "name",
+              "fieldValue": "={{ $json.output.Title }}"
+            },
+            {
+              "fieldId": "body",
+              "fieldValue": "={{ $json.output.Summary }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "={{ $json.output.Status }}"
+            },
+            {
+              "fieldId": "triggered_by",
+              "fieldValue": "Gmail Inbox"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        -40
+      ],
+      "id": "7a63edb4-8dda-4940-adfd-3a0fd0d540a4",
+      "name": "Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "EhueZ6wgZUKDhXjC",
+          "name": "Ayush Aeva"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Summary",
+              "description": "Summary of the task completed",
+              "required": true
+            },
+            {
+              "name": "Title",
+              "description": "An appropirate and short title for the workflow",
+              "required": true
+            },
+            {
+              "name": "Status",
+              "description": "If task is successfully completed, put SUCCEEDED else PENDING",
+              "required": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "typeVersion": 1.1,
+      "position": [
+        920,
+        -20
+      ],
+      "id": "d8c82bed-f4a8-4995-b86a-b568dfe771d0",
+      "name": "Information Extractor1"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        940,
+        180
+      ],
+      "id": "37b54b5c-0a1c-4222-b5bc-046c08c8df8d",
+      "name": "OpenAI Chat Model4",
+      "credentials": {
+        "openAiApi": {
+          "id": "6tmVWBZijUXqKAIs",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - get message": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - add label to message": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - create label": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Draft Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Draft Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store": {
+      "ai_vectorStore": [
+        [
+          {
+            "node": "Vector Store Tool",
+            "type": "ai_vectorStore",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Vector Store Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail labelling agent": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Todoist": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - read_email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Gmail labelling agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Trigger2": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail1": {
+      "main": [
+        [
+          {
+            "node": "Email Draft Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Email Draft Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Draft Agent": {
+      "main": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Draft Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Information Extractor1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Information Extractor1": {
+      "main": [
+        [
+          {
+            "node": "Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "4de11c02-32f0-4d13-abc4-8a4d96834a8d",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "1c93a0e0a0534d1c9cf8a0b527175d25fd9eb1a66b1476102e9cdc72277976c2"
+  },
+  "id": "I6QouQNQG8hsHmdO",
+  "tags": []
+}
