@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Text, 
   View, 
@@ -38,6 +38,7 @@ const Index: React.FC<IndexProps> = () => {
   const [loadingSteps, setLoadingSteps] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stepsError, setStepsError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'pending' | 'succeeded'>('pending');
 
   // Fetch workflows data from Supabase
   useEffect(() => {
@@ -119,6 +120,16 @@ const Index: React.FC<IndexProps> = () => {
     };
   }, []);
 
+  // Determine if a workflow is completed (all steps completed) or pending
+  const isWorkflowCompleted = workflows.filter((workflow: Workflow) => workflow.status === 'succeeded');
+
+  // Filter workflows based on active tab
+  const filteredWorkflows = useMemo(() => {
+    if (workflows.length === 0) return [];
+    
+    return workflows.filter(workflow => workflow.status.toLowerCase() === activeTab.toLowerCase());
+  }, [workflows, activeTab]);
+
   return (
     <View style={[styles.container, drawerVisible && styles.containerWithOverlay]}>
       <ScrollView style={styles.scrollView}>
@@ -130,6 +141,34 @@ const Index: React.FC<IndexProps> = () => {
             </View>
           </TouchableOpacity>
         </View>
+
+        {/* Tab Navigation */}
+        <View style={tabStyles.tabContainer}>
+          <TouchableOpacity 
+            style={[
+              tabStyles.tab, 
+              activeTab === 'pending' && tabStyles.pendingTab
+            ]}
+            onPress={() => setActiveTab('pending')}
+          >
+            <Text style={[
+              tabStyles.tabText, 
+              activeTab === 'pending' && tabStyles.activeTabText
+            ]}>Pending</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[
+              tabStyles.tab, 
+              activeTab === 'succeeded' && tabStyles.succeededTab
+            ]}
+            onPress={() => setActiveTab('succeeded')}
+          >
+            <Text style={[
+              tabStyles.tabText, 
+              activeTab === 'succeeded' && tabStyles.activeTabText
+            ]}>Succeeded</Text>
+          </TouchableOpacity>
+        </View>
         
         {loading ? (
           <View style={styles.loadingContainer}>
@@ -139,16 +178,16 @@ const Index: React.FC<IndexProps> = () => {
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
-        ) : workflows.length === 0 ? (
+        ) : filteredWorkflows.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No workflows found</Text>
+            <Text style={styles.emptyText}>No {activeTab} workflows found</Text>
           </View>
         ) : (
-          workflows.map((workflow) => (
+          filteredWorkflows.map((workflow) => (
             <Card
               key={workflow.id}
               title={workflow.name}
-              subtitle={workflow.description}
+              subtitle={workflow.body}
               steps={workflowSteps.filter(step => step.workflow_id === workflow.id)}
               avatarUrl={`https://ui-avatars.com/api/?name=${encodeURIComponent(workflow.name)}&background=random`}
               stepCount={workflowSteps.filter(step => step.workflow_id === workflow.id).length}
@@ -178,6 +217,42 @@ const Index: React.FC<IndexProps> = () => {
     </View>
   );
 }
+
+// Tab styles
+const tabStyles = StyleSheet.create({
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 0,
+    marginBottom: 16,
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  activeTab: {
+    backgroundColor: '#f5f5f5',
+  },
+  pendingTab: {
+    backgroundColor: '#808080', // Grey color for pending
+  },
+  succeededTab: {
+    backgroundColor: '#808080', // Green color for succeeded
+  },
+  tabText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: 'white',
+  },
+});
 
 export default Index;
 

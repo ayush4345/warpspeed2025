@@ -15,8 +15,9 @@ import { styles } from '../styles';
 export interface Workflow {
   id: number;
   name: string;
-  description: string;
+  body: string;
   triggered_by: string;
+  status: string;
   updated_at: string;
 }
 
@@ -111,7 +112,8 @@ export const BottomDrawer: React.FC<BottomDrawerProps> = ({
               {cardData && (
                 <>
                   <Text style={styles.drawerTitle}>{cardData.name}</Text>
-                  <Text style={styles.drawerSubtitle}>{cardData.description}</Text>
+                  <Text style={styles.drawerSubtitle}>{cardData.body}</Text>
+                  <Text style={styles.drawerText}>Steps taken</Text>
                 </>
               )}
               
