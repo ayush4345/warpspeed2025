@@ -23,6 +23,38 @@ Medha reimagines virtual assistance through ambient computing:
   - Manages workflows without explicit commands
   - Delivers information through natural audio interfaces
   - Adapts to your changing needs and priorities
+ 
+## Screenshots
+
+- Mockups/designs of any UI components
+  <table>
+  <tr>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/ea8a9a74-6924-4693-95ca-da0eb4d147d9" width="200"><br>
+      <sub><i>Agent Inbox</i></sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/1fcca3b6-d797-4c15-af30-24925a48099e" width="200"><br>
+      <sub><i>Workflow Steps</i></sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/63e7457b-c173-4ff9-be64-7bcb4f3977a1" width="200"><br>
+      <sub><i>Daily Digest</i></sub>
+    </td>
+    <td align="center">
+      <img src="https://github.com/user-attachments/assets/2c273c60-833e-4bdd-9086-e94cf9db8f5a" width="200"><br>
+      <sub><i>Voice Interaction powered by Sarvam</i></sub>
+    </td>
+
+  </tr>
+</table>
+
+## n8n Workflows
+
+![image](https://github.com/user-attachments/assets/bf18f68c-8520-4898-a436-4ed72bf50097)
+
+Other workflows are in the repo in the json format.
+
 
 ## 🛠️ Tech Stack
 
