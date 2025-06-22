@@ -44,6 +44,7 @@ export function getIconForProvider(tool: string): any {
     'google': require('../../../assets/icons/google.png'),
     'slack': require('../../../assets/icons/slack.png'),
     'twitter': require('../../../assets/icons/twitter.png'),
+    'telegram': require('../../../assets/icons/telegram.png'),
     'x': require('../../../assets/icons/x.png'),
     
     // Aliases
