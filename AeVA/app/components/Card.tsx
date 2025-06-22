@@ -12,7 +12,10 @@ export interface CardProps {
   stepCount: number;
   triggeredBy?: string;
   updatedAt?: string;
+  status?: string;
   onViewDetail: () => void;
+  onYesPress?: () => void;
+  onNoPress?: () => void;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -23,7 +26,10 @@ export const Card: React.FC<CardProps> = ({
   stepCount,
   triggeredBy,
   updatedAt,
+  status = '',
   onViewDetail,
+  onYesPress,
+  onNoPress,
 }) => {
   return (
     <View style={styles.card}>
@@ -60,13 +66,30 @@ export const Card: React.FC<CardProps> = ({
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.viewDetailButton}
-          onPress={onViewDetail}
-        >
-          <Text style={styles.viewDetailText}>View Detail</Text>
-          <Text style={styles.arrowIcon}>→</Text>
-        </TouchableOpacity>
+        {status?.toLowerCase() === 'pending' ? (
+          <View style={styles.actionButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.yesButton]}
+              onPress={onYesPress}
+            >
+              <Text style={styles.actionButtonText}>Yes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.actionButton, styles.noButton]}
+              onPress={onNoPress}
+            >
+              <Text style={styles.actionButtonText}>No</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.viewDetailButton}
+            onPress={onViewDetail}
+          >
+            <Text style={styles.viewDetailText}>View Detail</Text>
+            <Text style={styles.arrowIcon}>→</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );

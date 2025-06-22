@@ -4,12 +4,15 @@ import {
   View, 
   ScrollView, 
   TouchableOpacity,
-  StyleSheet
+  StyleSheet,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync, registerDeviceWithServer } from "./lib/notifications";
 import { useRouter } from 'expo-router';
 import { fetchData } from './lib/supabase';
+import { getTasksFromGoogleSheets } from './lib/googleSheets';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
 // Import refactored components
@@ -36,33 +39,42 @@ const Index: React.FC<IndexProps> = () => {
   const [workflowSteps, setWorkflowSteps] = useState<WorkflowStepData[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingSteps, setLoadingSteps] = useState(false);
+  const [loadingSheetTasks, setLoadingSheetTasks] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stepsError, setStepsError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'pending' | 'succeeded'>('pending');
 
-  // Fetch workflows data from Supabase
+  // Fetch workflows data from Supabase and Google Sheets
   useEffect(() => {
-    async function fetchWorkflows() {
+    async function fetchAllData() {
       try {
         setLoading(true);
-        const data = await fetchData<Workflow>('Workflow', {
+        setLoadingSheetTasks(true);
+        
+        // Fetch workflows from Supabase
+        const supabaseData = await fetchData<Workflow>('Workflow', {
           columns: '*',
           order: { column: 'updated_at', ascending: false },
           limit: 20
         });
         
-        if (data) {
-          setWorkflows(data);
-        }
+        // Fetch tasks from Google Sheets
+        const sheetTasks = await getTasksFromGoogleSheets(); // Fetch from server API
+        
+        // Combine both data sources
+        const combinedData = [...(supabaseData || []), ...sheetTasks];
+        
+        setWorkflows(combinedData);
       } catch (err) {
-        console.error('Error fetching workflows:', err);
-        setError('Failed to load workflows');
+        console.error('Error fetching data:', err);
+        setError('Failed to load workflows and tasks');
       } finally {
         setLoading(false);
+        setLoadingSheetTasks(false);
       }
     }
 
-    fetchWorkflows();
+    fetchAllData();
   }, []);
 
   // Fetch workflow steps when a workflow is selected
@@ -92,6 +104,37 @@ const Index: React.FC<IndexProps> = () => {
     setSelectedCard(workflow);
     setDrawerVisible(true);
     fetchWorkflowSteps(workflow.id);
+  };
+
+  const handleYesPress = (workflow: Workflow) => {
+    // Mark workflow as succeeded
+    const updatedWorkflows = workflows.map(w => {
+      if (w.id === workflow.id) {
+        return { ...w, status: 'succeeded' };
+      }
+      return w;
+    });
+    setWorkflows(updatedWorkflows);
+    
+    // Here you would typically make an API call to update the status in your database
+    // For example: updateWorkflowStatus(workflow.id, 'succeeded');
+    
+    // Show a success message
+    Alert.alert('Success', `Task "${workflow.name}" marked as completed`);
+    
+    // If we're currently in the pending tab, we can switch to succeeded tab to see the moved card
+    if (activeTab === 'pending') {
+      // Uncomment the next line if you want to automatically switch to the succeeded tab
+      // setActiveTab('succeeded');
+    }
+  };
+
+  const handleNoPress = (workflow: Workflow) => {
+    // You could implement different logic for declining a task
+    // For example, you might want to mark it as 'rejected' instead of keeping it as 'pending'
+    
+    // For now, just show a message
+    Alert.alert('Task Declined', `You declined the task "${workflow.name}"`);
   };
 
   const navigateToSettings = () => {
@@ -185,7 +228,8 @@ const Index: React.FC<IndexProps> = () => {
         
         {loading ? (
           <View style={styles.loadingContainer}>
-            <Text style={styles.loadingText}>Loading workflows...</Text>
+            <ActivityIndicator size="large" color="#808080" />
+            <Text style={styles.loadingText}>Loading workflows and tasks...</Text>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
@@ -193,7 +237,7 @@ const Index: React.FC<IndexProps> = () => {
           </View>
         ) : filteredWorkflows.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No {activeTab} workflows found</Text>
+            <Text style={styles.emptyText}>No {activeTab} workflows or tasks found</Text>
           </View>
         ) : (
           filteredWorkflows.map((workflow) => (
@@ -206,7 +250,10 @@ const Index: React.FC<IndexProps> = () => {
               stepCount={workflowSteps.filter(step => step.workflow_id === workflow.id).length}
               triggeredBy={workflow.triggered_by}
               updatedAt={formatDate(new Date(workflow.updated_at))}
+              status={workflow.status}
               onViewDetail={() => handleViewDetail(workflow)}
+              onYesPress={() => handleYesPress(workflow)}
+              onNoPress={() => handleNoPress(workflow)}
             />
           ))
         )}
