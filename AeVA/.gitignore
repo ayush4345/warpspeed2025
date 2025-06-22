@@ -42,3 +42,4 @@ app-example
 aeva-3a3ff-firebase-adminsdk-fbsvc-6cade19c7b.json
 google-services.json
 .env*
+service-account.json
